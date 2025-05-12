@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
-  FaBars, FaSignOutAlt, FaUser, FaBriefcase, FaClock, FaTasks, FaChartBar, FaEye
+  FaBars, FaSignOutAlt, FaUser, FaBriefcase,FaFileUpload, FaClock, FaTasks, FaChartBar, FaEye
 } from "react-icons/fa";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -124,6 +124,10 @@ const [bookings, setBookings] = useState(bookingsData.map(b => ({ ...b, assigned
       .toISOString()
       .split('T')[0];
   };
+const [reports, setReports] = useState(() => {
+  const stored = localStorage.getItem("uploadedReports");
+  return stored ? JSON.parse(stored) : [];
+});
 
   const initialData = [...Array(20).keys()].map((_, i) => ({
     id: `#${101 + i}`,
@@ -582,7 +586,33 @@ const totalPage = Math.ceil(filterBookings.length / bookingsPerPage);
     });
     // Update your serviceData/statusCountData/etc here based on `filtered`
   };
-  
+  const handleReportUpload = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    const newReport = {
+      id: Date.now(),
+      name: file.name,
+      data: reader.result,
+      uploadedAt: new Date().toLocaleString(),
+    };
+
+    const updatedReports = [...reports, newReport];
+    setReports(updatedReports);
+    localStorage.setItem("uploadedReports", JSON.stringify(updatedReports));
+  };
+  reader.readAsDataURL(file);
+};
+const handleDeleteReport = (id) => {
+  const updatedReports = reports.filter(r => r.id !== id);
+  setReports(updatedReports);
+  localStorage.setItem("uploadedReports", JSON.stringify(updatedReports));
+};
+
+
+
   return (
 
     <div className="smm-dashboard">
@@ -606,9 +636,17 @@ const totalPage = Math.ceil(filterBookings.length / bookingsPerPage);
             <FaTasks />
             {isSidebarOpen && <span>Task Management</span>}
           </div>
+                  
+                   
+          <div className={`smm-menu-item ${activeSection === "reports" ? "active" : ""}`} onClick={() => setActiveSection("reports")}>
+            <FaFileUpload />
+              {isSidebarOpen && <span>Upload Reports</span>}
+          </div>
+           
+          
           <div className={`smm-menu-item ${activeSection === "analytics" ? "active" : ""}`} onClick={() => setActiveSection("analytics")}>
             <FaChartBar />
-            {isSidebarOpen && <span>Analytics & Reporting</span>}
+            {isSidebarOpen && <span>Analytics</span>}
           </div>
           <div className="smm-menu-item logout">
             <FaSignOutAlt />
@@ -1013,7 +1051,7 @@ const totalPage = Math.ceil(filterBookings.length / bookingsPerPage);
       {activeSection === "analytics" && (
 <div className="smm-main">
   <div className="dashboard-container">
-      <h2>Analytics & Reporting</h2>
+      <h2>Analytics</h2>
 
       {/* Buttons */}
       <div className="tabs">
@@ -1185,28 +1223,52 @@ const totalPage = Math.ceil(filterBookings.length / bookingsPerPage);
         )}
       </div>
 
-      {/* File Upload Section */}
-      <div className="upload-section">
-        <h4>Upload Report</h4>
-        <button onClick={() => document.getElementById('fileUpload').click()} className="upload-btn">
-          Upload Report (PDF)
-        </button>
-        <input
-          id="fileUpload"
-          type="file"
-          style={{ display: 'none' }}
-          accept=".pdf"
-          onChange={handleFileUpload}
-        />
-        <h4>Uploaded Reports:</h4>
-        <ul className="uploaded-reports">
-          {uploadedReports.map((report, index) => (
-            <li key={index}>{report}</li>
-          ))}
-        </ul>
-      </div>
     </div>
       </div>)}
+
+        {activeSection === "reports" && (
+             <div className="smm-main">
+          <section>
+  <h2>Upload Reports</h2>
+  <input
+  type="file"
+  id="reportUpload"
+  onChange={handleReportUpload}
+  style={{ display: "none" }}
+/>
+<button onClick={() => document.getElementById("reportUpload").click()} className="btn-upload">
+  Upload Report
+</button>
+
+  {reports.length === 0 ? (
+    <p style={{ color: "#888", marginTop: "10px" }}>No reports uploaded yet.</p>
+  ) : (
+    <table className="report-table">
+      <thead>
+        <tr>
+          <th>Report Name</th>
+          <th>Uploaded At</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {reports.map((report) => (
+          <tr key={report.id}>
+            <td>{report.name}</td>
+            <td>{report.uploadedAt}</td>
+            <td>
+              <a href={report.data} download={report.name} className="btn-download">Download</a>
+              <button onClick={() => handleDeleteReport(report.id)} className="btn-delete">Delete</button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )}
+</section>
+
+          </div>
+        )}
 </div>
  );
 };

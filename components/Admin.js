@@ -8,7 +8,7 @@ const professions = [
   "Photography", "Videography", "Photoediting", "Social Media Mananger",
   "Videoediting", "Graphic designing", "Admin", "Finance"
 ];
-const services = ['Wedding', 'Birthday', 'Corporate', 'Product Shoot', 'Event Coverage'];
+const services = ['Photography', 'Videography', 'Photoediting', 'Videoediting', 'Graphic Designing'];
 const statuses = ['Pending', 'In Progress', 'Completed'];
 const payments = ['Yes', 'No'];
 const bookingsData = [
@@ -33,6 +33,14 @@ const bookingsData = [
   { id: '#119',number:"9039495969", service: 'Graphic Designing', status: 'Delivered', date: '2025-04-05' },
   { id: '#120',number:"9039495969", service: 'Photography', status: 'Quotation sent by YGP', date: '2025-04-04' },
 ];
+
+//feedback
+const feedbackData = [
+  { id: 1, name: "John Doe", email: "john@example.com", message: "Great service!", date: "2025-04-10" },
+  { id: 2, name: "Jane Smith", email: "jane@example.com", message: "Could be better.", date: "2025-04-12" },
+  { id: 3, name: "Alice Johnson", email: "alice@example.com", message: "Very professional team.", date: "2025-04-14" },
+];
+
 const Admin= () => {
    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [activeSection, setActiveSection] = useState('employees');
@@ -46,7 +54,9 @@ const Admin= () => {
     name: '', profession: '', phone: '', address: '', email: '', salary: ''
   });
   const employeesPerPage = 5;
-const totalPage= Math.ceil(filteredEmployees.length / employeesPerPage);
+  const [currentPage, setCurrentPage] = useState(1);
+  const filteredEmployees = filter ? employees.filter(e => e.profession === filter) : employees;
+  const totalPage= Math.ceil(filteredEmployees.length / employeesPerPage);
 const indexOfLastEmp = currentPage * employeesPerPage;
 const indexOfFirstEmp = indexOfLastEmp - employeesPerPage;
 const currentEmployees = filteredEmployees.slice(indexOfFirstEmp, indexOfLastEmp);
@@ -92,12 +102,13 @@ const currentEmployees = filteredEmployees.slice(indexOfFirstEmp, indexOfLastEmp
     setEditMode(false);
   };
 
-  const filteredEmployees = filter ? employees.filter(e => e.profession === filter) : employees;
+ 
 
   {/*Manange client*/}
   const [clients, setClients] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const clientsPerPage = 5;
+  
+
+  const clientsPerPage = 8;
 
   useEffect(() => {
     const stored = localStorage.getItem('clients');
@@ -118,11 +129,33 @@ const currentEmployees = filteredEmployees.slice(indexOfFirstEmp, indexOfLastEmp
     setClients(updated);
   };
 
-  const filtered = filter ? clients.filter(c => c.service === filter) : clients;
+  const filtered = filter ? bookingsData.filter(c => c.service === filter) :  bookingsData;
   const totalPages = Math.ceil(filtered.length / clientsPerPage);
   const indexOfLast = currentPage * clientsPerPage;
   const indexOfFirst = indexOfLast - clientsPerPage;
   const currentClients = filtered.slice(indexOfFirst, indexOfLast);
+//Manage feedback
+const [feedbacks, setFeedbacks] = useState([]);
+const [selectedFeedback, setSelectedFeedback] = useState(null);
+
+useEffect(() => {
+  const stored = localStorage.getItem('feedbacks');
+  if (stored) {
+    setFeedbacks(JSON.parse(stored));
+  } else {
+    setFeedbacks(feedbackData);
+    localStorage.setItem('feedbacks', JSON.stringify(feedbackData));
+  }
+}, []);
+
+useEffect(() => {
+  localStorage.setItem('feedbacks', JSON.stringify(feedbacks));
+}, [feedbacks]);
+
+const handleDeleteFeedback = (id) => {
+  const updated = feedbacks.filter(f => f.id !== id);
+  setFeedbacks(updated);
+};
 
 return (
 <div className="smm-dashboard">
@@ -140,19 +173,17 @@ return (
             {isSidebarOpen && <span>Manange clients</span>}
           </div>
         
-          <div className={`smm-menu-item ${activeSection === "task" ? "active" : ""}`} onClick={() => setActiveSection("task")}>
+         
+<div className={`smm-menu-item ${activeSection === "feedback" ? "active" : ""}`} onClick={() => setActiveSection("feedback")}>
+  <FaThumbsUp />
+  {isSidebarOpen && <span>Manage Feedback</span>}
+</div>
+ <div className={`smm-menu-item ${activeSection === "task" ? "active" : ""}`} onClick={() => setActiveSection("task")}>
 
             <FaTasks />
             {isSidebarOpen && <span>Reports</span>}
           </div>
-          <div className={`smm-menu-item ${activeSection === "analytics" ? "active" : ""}`} onClick={() => setActiveSection("analytics")}>
-            <FaChartBar />
-            {isSidebarOpen && <span>Analytics</span>}
-          </div>
-          <div className={`smm-menu-item ${activeSection === "analytics" ? "active" : ""}`} onClick={() => setActiveSection("analytics")}>
-            < FaThumbsUp/>
-            {isSidebarOpen && <span>Manage Feedback</span>}
-          </div>
+
           <div className="smm-menu-item logout">
             <FaSignOutAlt />
             {isSidebarOpen && <span>Logout</span>}
@@ -325,6 +356,60 @@ return (
  
       
             </div>)}
+            {activeSection === "feedback" && (
+  <div className="smm-main">
+<div className="feedback-container">
+  <h2>Manage Feedback</h2>
+ <table className="feedback-table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Message</th>
+      <th>Date</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    {feedbacks.length === 0 ? (
+      <tr>
+        <td colSpan="5">No feedback available</td>
+      </tr>
+    ) : (
+      feedbacks.map(fb => (
+        <tr key={fb.id}>
+          <td>{fb.name}</td>
+          <td>{fb.email}</td>
+          <td>{fb.message.length > 30 ? fb.message.slice(0, 30) + "..." : fb.message}</td>
+          <td>{fb.date}</td>
+          <td>
+            <button className="view-btn" onClick={() => setSelectedFeedback(fb)}>View</button>
+            <button className="delete-btn" onClick={() => handleDeleteFeedback(fb.id)}>Delete</button>
+          </td>
+        </tr>
+      ))
+    )}
+  </tbody>
+</table>
+
+
+  {selectedFeedback && (
+    <div className="modal-overlay">
+      <div className="feedback-modal modern">
+        <span className="close-btn" onClick={() => setSelectedFeedback(null)}>&times;</span>
+        <h3>Feedback Details</h3>
+        <p><strong>Name:</strong> {selectedFeedback.name}</p>
+        <p><strong>Email:</strong> {selectedFeedback.email}</p>
+        <p><strong>Date:</strong> {selectedFeedback.date}</p>
+        <p><strong>Message:</strong> {selectedFeedback.message}</p>
+      </div>
+    </div>
+  )}
+</div>
+
+  </div>
+)}
+
 </div>
 
 );
